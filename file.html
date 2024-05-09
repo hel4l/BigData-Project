@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Search Engine</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        html, body {
+            height: 100%;
+        }
+    </style>
+</head>
+<body class="d-flex flex-column">
+<header class="bg-dark text-white py-4">
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <h1 class="text-center">Search Engine</h1>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div class="container mt-5 flex-grow-1">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <form id="searchForm">
+                <div class="input-group mb-3">
+                    <input id="searchInput" class="form-control" type="search" placeholder="Search" aria-label="Search">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-primary" type="submit">Search</button>
+                    </div>
+                </div>
+            </form>
+            <ul id="results" class="list-group"></ul>
+        </div>
+    </div>
+</div>
+
+<footer class="bg-dark text-white py-3">
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <p class="text-center">© 2024 My Search Engine. All rights reserved.</p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script>
+    document.getElementById('searchForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const results = document.getElementById('results');
+        results.innerHTML = ''; // Clear previous results
+        const searchInput = document.getElementById('searchInput');
+        const searchQuery = searchInput.value.trim();
+        const urlMapping = {};
+        const pageRankMapping = {};
+
+        fetch('url_mapping.txt')
+            .then(response => response.text())
+            .then(data => {
+                const lines = data.split('\n');
+                lines.forEach(line => {
+                    const [number, url] = line.split(': ')
+                    urlMapping[number] = url;
+                });
+
+                fetch('page_rank.txt')
+                    .then(response => response.text())
+                    .then(data => {
+                        const lines = data.split('\n');
+                        lines.forEach(line => {
+                            const [number, rank] = line.split('→')
+                            pageRankMapping[number] = parseFloat(rank);
+                        });
+
+                        fetch('file.txt')
+                            .then(response => response.text())
+                            .then(data => {
+                                const words = searchQuery.split(' ');
+                                const numbers = new Set();
+                                const lines = data.split('\n');
+                                words.forEach(word => {
+                                    lines.forEach(line => {
+                                        if (line.includes(word)) {
+                                            const regex = /→(\d+);/g;
+                                            let match;
+                                            while ((match = regex.exec(line)) !== null) {
+                                                numbers.add(match[1]);
+                                            }
+                                        }
+                                    });
+                                });
+
+                                const listItems = [];
+                                numbers.forEach(number => {
+                                    const li = document.createElement('li');
+                                    li.className = 'list-group-item';
+                                    const a = document.createElement('a');
+                                    a.href = urlMapping[number] || '#';
+                                    a.textContent = urlMapping[number] || 'URL not found';
+                                    li.appendChild(a);
+                                    listItems.push({li, rank: pageRankMapping[number] || 0});
+                                });
+
+                                // Sort list items by rank
+                                listItems.sort((a, b) => b.rank - a.rank);
+
+                                // Append sorted list items to results
+                                listItems.forEach(item => {
+                                    results.appendChild(item.li);
+                                });
+
+                                // Check if any li elements were added to results
+                                if (results.children.length === 0) {
+                                    const div = document.createElement('div');
+                                    div.className = 'text-center';
+                                    div.textContent = 'No results found';
+                                    results.appendChild(div);
+                                }
+                            });
+                    });
+            });
+    });
+
+</script>
+
+</body>
+</html>
