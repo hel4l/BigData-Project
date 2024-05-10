@@ -14,7 +14,6 @@ class WebCrawler:
 
     # Reads the last file number from the mapping file and returns it.
     def _get_last_file_number(self):
-
         mapping_file_path = os.path.join(self.save_directory, "url_mapping.txt")
         try:
             with open(mapping_file_path, "r", encoding="utf-8") as f:
@@ -24,9 +23,7 @@ class WebCrawler:
             return -1
 
     # Saves the extracted text to a file with proper formatting.
-
     def _save_text_to_file(self, url, text):
-
         self.file_number += 1
         filename = f"{self.file_number}.txt"
         filepath = os.path.join(self.save_directory, filename)
@@ -40,17 +37,13 @@ class WebCrawler:
 
     # Formats the extracted text by removing whitespace, empty lines, and non-alphabetic characters.
     def _format_text(self, text):
-
         text = text.strip()
         text = " ".join(text.split())
         text = os.linesep.join([s for s in text.splitlines() if s])
-        # Remove non-alphabetic characters
-        # text = re.sub(r'[^a-zA-Z\s]', '', text)
         return text
 
     # Loads visited URLs from a file and updates the internal set.
     def _load_visited_urls(self):
-
         visited_urls_file_path = os.path.join(self.save_directory, "visited_urls.txt")
         try:
             with open(visited_urls_file_path, "r", encoding="utf-8") as f:
@@ -58,7 +51,19 @@ class WebCrawler:
         except FileNotFoundError:
             pass
 
+    def _load_adjacency_list(self):
+        adjacency_list = {}
+        try:
+            with open(os.path.join(self.save_directory, "adjacency_list.txt"), "r", encoding="utf-8") as f:
+                for line in f:
+                    node, neighbors = line.strip().split(":", 1)  # split at the first colon only
+                    adjacency_list[node] = set(neighbors.split(' , '))
+        except FileNotFoundError:
+            pass
+        return adjacency_list
+
     def _save_adjacency_list(self, adjacency_list):
+        # Load the URL mapping from the file
         url_mapping = {}
         with open(os.path.join(self.save_directory, "url_mapping.txt"), "r", encoding="utf-8") as f:
             for line in f:
@@ -76,18 +81,17 @@ class WebCrawler:
                     f.write(f"{node_number} : {' , '.join(neighbors_numbers)}\n")
 
     def crawl(self, url, max_pages):
-
         self._load_visited_urls()
         queue = collections.deque([url])
         processed_pages = 0
 
-        adjacency_list = {}
+        adjacency_list = self._load_adjacency_list()
 
         while queue and processed_pages < max_pages:
             url = queue.popleft()
             if url not in self.visited_urls:
                 try:
-                    response = requests.get(url)
+                    response = requests.get(url, timeout=10)  # Set timeout to 10 seconds
                     soup = BeautifulSoup(response.text, "html.parser")
 
                     # Extract and save text
@@ -104,7 +108,11 @@ class WebCrawler:
                             neighbors.add(href)
                             queue.append(href)
 
-                    adjacency_list[url] = neighbors
+                    # Update adjacency list instead of overwriting it
+                    if url in adjacency_list:
+                        adjacency_list[url].update(neighbors)
+                    else:
+                        adjacency_list[url] = neighbors
 
                     self.visited_urls.add(url)
                     print(f"Visited: {url}")
@@ -117,9 +125,11 @@ class WebCrawler:
                     self._save_adjacency_list(adjacency_list)
 
                     processed_pages += 1
+                except requests.exceptions.Timeout:
+                    print(f"Skipping {url} due to timeout")
                 except Exception as e:
                     print(f"Failed to process {url}: {e}")
 
 if __name__ == "__main__":
     crawler = WebCrawler("D:\\crawling")
-    crawler.crawl("https://edition.cnn.com", 10000)
+    crawler.crawl("https://www.nytimes.com", 10000)
