@@ -66,7 +66,7 @@ def calculate_pagerank(adj_matrix, damping_factor=0.8, max_iterations=1500, tol=
         nprev = new_rank
 
     print(new_rank)
-    return new_rank
+    return np.round(new_rank,8)
 
 
 def write_pagerank_to_file(page_rank, file_path):

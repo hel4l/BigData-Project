@@ -56,6 +56,8 @@ class WebCrawler:
         try:
             with open(os.path.join(self.save_directory, "adjacency_list.txt"), "r", encoding="utf-8") as f:
                 for line in f:
+                    if ":" not in line:  # Skip lines that do not contain a colon
+                        continue
                     node, neighbors = line.strip().split(":", 1)  # split at the first colon only
                     adjacency_list[node] = set(neighbors.split(' , '))
         except FileNotFoundError:
@@ -132,4 +134,4 @@ class WebCrawler:
 
 if __name__ == "__main__":
     crawler = WebCrawler("D:\\crawling")
-    crawler.crawl("https://www.nytimes.com", 10000)
+    crawler.crawl("https://www.bbc.com/news", 10000)
