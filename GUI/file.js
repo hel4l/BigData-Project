@@ -55,14 +55,15 @@ document.getElementById('searchForm').addEventListener('submit', function (event
     const listItems = [];
     numbers.forEach(number => {
         const li = document.createElement('li');
-        li.className = 'list-group-item';
+        // Add Tailwind CSS classes to style the list item
+        li.classList.add('border', 'border-gray-300', 'rounded-md', 'p-4', 'mb-2', 'hover:shadow-md', 'bg-white');
         const a = document.createElement('a');
         a.href = urlMapping[number] || '#';
         a.textContent = urlMapping[number] || 'URL not found';
-        li.appendChild(a);
-        listItems.push({li, rank: pageRankMapping[number] || 0});
-    });
 
+        li.appendChild(a);
+        listItems.push({ li, rank: pageRankMapping[number] || 0 });
+    });
     // Sort list items by rank
     listItems.sort((a, b) => b.rank - a.rank);
 
@@ -74,7 +75,6 @@ document.getElementById('searchForm').addEventListener('submit', function (event
     // Check if any li elements were added to results
     if (results.children.length === 0) {
         const div = document.createElement('div');
-        div.className = 'text-center';
         div.textContent = 'No results found';
         results.appendChild(div);
     }
