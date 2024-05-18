@@ -1,5 +1,17 @@
 import re
 
+def clear_large_files(directory_path):
+    for filename in os.listdir(directory_path):
+        file_path = os.path.join(directory_path, filename)
+        if os.path.isfile(file_path):
+            file_size_kb = os.path.getsize(file_path) / 1024
+            if file_size_kb > 50:
+                with open(file_path, 'w') as file:
+                    file.write('')
+
+# Use the function
+# Solution 1: Using double backslashes
+clear_large_files('D:\\Collage\\Projects\\BigData-Project\\CrawledData')
 # Open the file and read its content
 # Open the file and read its content
 with open(r'D:\--\--\CrawledData\adjacency_list.txt', 'r', encoding='utf-8') as file:

@@ -134,4 +134,4 @@ class WebCrawler:
 
 if __name__ == "__main__":
     crawler = WebCrawler("D://--//--//CrawledData")
-    crawler.crawl("https://www.masrawy.com", 10)
+    crawler.crawl("https://www.youm7.com", 500)
