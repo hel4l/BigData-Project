@@ -38,13 +38,19 @@
         </button>
     </form>
     <div class="flex justify-center items-center mt-2 mb-2">
-        <div class="bg-gray-200 p-2 rounded-lg cursor-pointer selected">
+        <div class="bg-gray-200 p-2 rounded-lg cursor-pointer m-1 selected">
             <label>
-                <input type="radio" name="radio" value="tfidf" class="hidden" checked />
+                <input type="radio" name="radio" value="invertIndex" class="hidden" checked/>
+                <span class="text-gray-300">Invert Index</span>
+            </label>
+        </div>
+        <div class="bg-gray-200 p-2 rounded-lg cursor-pointer m-1">
+            <label>
+                <input type="radio" name="radio" value="tfidf" class="hidden" />
                 <span class="text-gray-300">TF-IDF</span>
             </label>
         </div>
-        <div class="bg-gray-200 p-2 rounded-lg cursor-pointer ml-2">
+        <div class="bg-gray-200 p-2 rounded-lg cursor-pointer m-1">
             <label>
                 <input type="radio" name="radio" value="pageRank" class="hidden" />
                 <span class="text-gray-300">Page Rank</span>
