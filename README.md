@@ -5,6 +5,9 @@ This project involves various Big Data operations such as web crawling, PageRank
 
 ## How to Run
 
+### Hadoop Invert_Index
+Compile and run `invert_index.java` in your Hadoop environment.
+
 ### Crawling & PageRank
 1. Run `Crawling.py` to crawl web pages.
 2. Run `CleanAdjList.py` to clean the adjacency list.
@@ -15,11 +18,5 @@ This project involves various Big Data operations such as web crawling, PageRank
 ### GUI
 Open `file.html` in a web browser.
 
-### Hadoop Invert_Index
-Compile and run `invert_index.java` in your Hadoop environment.
-
-## Contributing
-Please read CONTRIBUTING.md for details on our code of conduct, and the process for submitting pull requests to us.
-
-## License
-This project is licensed under the MIT License - see the LICENSE.md file for details
+### Video
+https://github.com/hel4l/BigData-Project/assets/110468386/0066245f-abce-41e4-9afe-f0bcc6d361ef
