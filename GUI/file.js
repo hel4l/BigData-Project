@@ -132,14 +132,14 @@ radioButtons.forEach(radio => {
     radio.addEventListener('change', function() {
         // Reset all labels' background color
         radioButtons.forEach(r => {
-            r.parentElement.classList.remove('bg-gray-500');
-            r.parentElement.classList.add('bg-gray-300');
+            r.parentElement.classList.remove('bg-black');
+            r.parentElement.classList.add('bg-gray-500');
         });
 
         // Change the selected radio button's parent label background color
         if (this.checked) {
-            this.parentElement.classList.remove('bg-gray-300');
-            this.parentElement.classList.add('bg-gray-500');
+            this.parentElement.classList.remove('bg-gray-500');
+            this.parentElement.classList.add('bg-black');
 
             // Store the selected label's value in the variable
             selectedLabelValue = this.value;
@@ -238,19 +238,24 @@ function displaySearchResults(searchResults) {
             searchResultsContainer.appendChild(paragraph);
         } else {
             for (let [id, score] of searchResults) {
-                const div = document.createElement('div');
-                div.setAttribute('class', 'border border-gray-300 p-4 my-4');
+                //if the id is not in the urlMap continue
+                if (!urlMap.has(id)) {
+                    continue;
+                }
+                const li = document.createElement('li');
+                li.classList.add('border', 'border-gray-300', 'rounded-md', 'p-4', 'mb-2', 'hover:shadow-md', 'bg-white');
 
-                const heading = document.createElement('h2');
-                heading.setAttribute('class', 'text-xl font-semibold');
-                heading.textContent = urlMap.get(id);
-                div.appendChild(heading);
-
-                const paragraph = document.createElement('p');
-                paragraph.textContent = `Score: ${score}`;
-                div.appendChild(paragraph);
-
-                searchResultsContainer.appendChild(div);
+                const a = document.createElement('a');
+                a.href = urlMap.get(id);
+                // if the text content is too long, truncate it
+                if (urlMap.get(id).length > 100) {
+                    a.textContent = urlMap.get(id).substring(0, 100).toLowerCase() + '...';
+                } else {
+                    a.textContent = urlMap.get(id);
+                }
+                a.target='_blank';
+                li.appendChild(a);
+                searchResultsContainer.appendChild(li);
             }
         }
     } else {
