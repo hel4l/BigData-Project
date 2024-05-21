@@ -1,137 +1,259 @@
-let urlMapping = {};
-let pageRankMapping = {};
-let tfidfMapping = {};
-let invertIndexMapping = {};
-let fileData = '';
-
-window.onload = function () {
-    fetchData('url_mapping.txt', urlMapping, ': ')
-        .then(() => fetchData('page_rank.txt', pageRankMapping, '→', parseFloat))
-        .then(() => fetchData('tfidf.txt', tfidfMapping, '→', parseFloat))
-        .then(() => fetchInvertIndexData('Invert_Index.txt', invertIndexMapping))
-        .then(() => fetch('Invert_Index.txt'))
-        .then(response => response.text())
-        .then(data => fileData = data.toLowerCase())
-        .catch(error => console.error('Error loading data:', error));
-
-    setupLabelClickHandlers();
-    document.querySelector('input[value="invertIndex"]').parentElement.parentElement.classList.add('selected');
-};
-
-document.getElementById('searchForm').addEventListener('submit', function (event) {
-    event.preventDefault();
-    performSearch();
-});
-
-function fetchData(filename, mapping, delimiter, transform = v => v) {
-    return fetch(filename)
-        .then(response => response.text())
-        .then(data => {
-            data.split('\n').forEach(line => {
-                const [key, value] = line.split(delimiter);
-                if (key && value !== undefined) {
-                    mapping[key.trim()] = transform(value.trim());
-                }
-            });
-        });
-}
-
-function fetchInvertIndexData(filename, mapping) {
-    return fetch(filename)
-        .then(response => response.text())
-        .then(data => {
-            data.split('\n').forEach(line => {
-                const [text, idsRanks] = line.split('\t');
-                if (idsRanks) {
-                    const parts = idsRanks.split(';');
-                    parts.forEach(part => {
-                        const [rank, id] = part.split('→').map(str => str.trim());
-                        if (!isNaN(rank) && id) {
-                            mapping[id] = parseFloat(rank);
+// Create a new Map
+let urlMap = new Map();
+let invertIndexMap = new Map();
+let tfidfScoresMap = new Map();
+let pageRankMap = new Map();
+let pagemapping = {};
+// Fetch the data from url_mapping.txt
+fetch('url_mapping.txt')
+    .then(response => response.text())
+    .then(data => {
+        // Split the data into lines
+        let lines = data.split('\n');
+        // Process each line
+        for (let line of lines) {
+            // Split the line into link ID and URL
+            let [linkId, url] = line.split(': ');
+            // Add to the map
+            urlMap.set(linkId, url);
+        }
+        // Print the map
+        console.log(urlMap);
+    })
+    .then(() => {
+        // Fetch the data from Invert_Index.txt
+        return fetch('Invert_Index.txt')
+            .then(response => response.text())
+            .then(data => {
+                // Split the data into lines
+                let lines = data.split('\n');
+                // Process each line
+                for (let line of lines) {
+                    // Check if line contains a tab
+                    if (line.includes('\t')) {
+                        // Split the line into word and its associated ids and values
+                        let [word, idsAndValues] = line.split('\t');
+                        // Check if idsAndValues is defined before trying to split it
+                        if (idsAndValues) {
+                            // Split ids and values into separate entities
+                            let idsAndValuesMap = new Map();
+                            idsAndValues.split(';').forEach(idAndValue => {
+                                // Check if idAndValue contains '→' before trying to split it
+                                if (idAndValue.includes('→')) {
+                                    let [value, id] = idAndValue.split('→');
+                                    idsAndValuesMap.set(id, value);
+                                }
+                            });
+                            // Add to the map
+                            invertIndexMap.set(word, idsAndValuesMap);
                         }
-                    });
+                    }
+                }
+                // Print the map
+                console.log(invertIndexMap);
+            });
+    })
+    .then(() => {
+        // Fetch the data from tfidf_scores.txt
+        return fetch('tfidf_scores.txt')
+            .then(response => response.text())
+            .then(data => {
+                // Check if data is defined before trying to split it
+                if (data) {
+                    // Split the data into lines
+                    let lines = data.split('\n');
+                    // Process each line
+                    for (let line of lines) {
+                        // Split the line into word and its associated ids and values
+                        let [word, idsAndValues] = line.split(' → ');
+                        // Check if idsAndValues is defined before trying to split it
+                        if (idsAndValues) {
+                            // Split ids and values into separate entities
+                            let idsAndValuesMap = new Map();
+                            idsAndValues.split(';').forEach(idAndValue => {
+                                let [id, value] = idAndValue.split(':');
+                                idsAndValuesMap.set(id, parseFloat(value));
+                            });
+                            // Add to the map
+                            tfidfScoresMap.set(word, idsAndValuesMap);
+                        }
+                    }
+                    // Print the map
+                    console.log(tfidfScoresMap);
                 }
             });
-        })
-        .catch(error => console.error('Error parsing invert index data:', error));
-}
+    })
+    .then(() => {
+        // Create a new Map that is a copy of tfidfScoresMap
+        for (let [key, value] of tfidfScoresMap) {
+            pageRankMap.set(key, new Map(value));
+        }
 
-function setupLabelClickHandlers() {
-    document.querySelectorAll('label').forEach(label => {
-        label.addEventListener('click', function () {
-            document.querySelectorAll('.cursor-pointer').forEach(div => {
-                div.classList.remove('selected');
+        // Fetch the data from page_rank.txt
+        return fetch('page_rank.txt')
+            .then(response => response.text())
+            .then(data => {
+                // Split the data into lines
+                let lines = data.split('\n');
+                // Process each line
+                for (let line of lines) {
+                    // Split the line into id and its associated value
+                    let [id, value] = line.split('→');
+                    pagemapping[id] = value;
+                }
+                //loop throw pageRankMap and update the values
+                for (let [word, idsAndValues] of pageRankMap) {
+                    for (let [id, value] of idsAndValues) {
+                        // Check if id is in pagemapping
+                        if (pagemapping[id]) {
+                            // Update the value
+                            idsAndValues.set(id, parseFloat(pagemapping[id]));
+                        }
+                    }
+                }
+
+                // Print the map
+                console.log(pageRankMap);
             });
-            this.parentNode.classList.add('selected');
-        });
+    })
+    .catch((error) => {
+        console.error('Error:', error);
     });
-}
 
-function performSearch() {
-    const results = document.getElementById('results');
-    results.innerHTML = '';
-    const searchQuery = document.getElementById('searchInput').value.trim().toLowerCase();
+
+// Initialize a variable to store the selected label's value
+let selectedLabelValue = 'invertIndex';
+
+// Get all radio buttons
+const radioButtons = document.querySelectorAll('input[type="radio"][name="radio"]');
+
+// Add event listener to each radio button
+radioButtons.forEach(radio => {
+    radio.addEventListener('change', function() {
+        // Reset all labels' background color
+        radioButtons.forEach(r => {
+            r.parentElement.classList.remove('bg-gray-500');
+            r.parentElement.classList.add('bg-gray-300');
+        });
+
+        // Change the selected radio button's parent label background color
+        if (this.checked) {
+            this.parentElement.classList.remove('bg-gray-300');
+            this.parentElement.classList.add('bg-gray-500');
+
+            // Store the selected label's value in the variable
+            selectedLabelValue = this.value;
+        }
+    });
+});
+//checked
+
+// search-form element
+const searchForm = document.getElementById('search-form');
+
+// Add event listener to the search form
+searchForm.addEventListener('submit', function(event) {
+    // Prevent the default form submission
+    event.preventDefault();
+
+    // Get the search query from the input field
+    const searchQuery = document.getElementById('search-query').value;
+    console.log(searchQuery);
+    console.log(selectedLabelValue);
+    // Get the search results
+    const searchResults = getSearchResults(searchQuery, selectedLabelValue);
+
+    // Display the search results
+    displaySearchResults(searchResults);
+}); // Added closing parenthesis here
+
+// Function to get search results
+
+function getSearchResults(searchQuery, searchType) {
+    // splite the search query into words
     const words = searchQuery.split(' ');
 
-    const numbers = new Set();
-    const ranks = {};
+    // make variable to store the search results id and score
+    let searchResults = new Map();
 
-    fileData.split('\n').forEach(line => {
-        words.forEach(word => {
-            if (line.includes(word)) {
-                const regex = /(\d+)→(\d+);/g;
-                let match;
-                while ((match = regex.exec(line)) !== null) {
-                    const id = match[2];
-                    const rank = parseFloat(match[1]);
-                    if (!numbers.has(id)) {
-                        numbers.add(id);
-                        ranks[id] = rank;
+    // loop throw the words
+    // check the search type if it is tfidf or page rank or inverted index
+    // get the search results and store it in the searchResults variable
+
+    if (searchType === 'tfidf') {
+        for (let word of words) {
+            if (tfidfScoresMap.has(word)) {
+                for (let [id, value] of tfidfScoresMap.get(word)) {
+                    if (searchResults.has(id)) {
+                        searchResults.set(id, searchResults.get(id) + value);
                     } else {
-                        ranks[id] += rank;
+                        searchResults.set(id, value);
                     }
                 }
             }
-        });
-    });
-
-    const searchType = document.querySelector('input[name="radio"]:checked').value;
-    const listItems = Array.from(numbers).map(number => {
-        const li = document.createElement('li');
-        li.classList.add('border', 'border-gray-300', 'rounded-md', 'p-4', 'mb-2', 'hover:shadow-md', 'bg-white');
-        const a = document.createElement('a');
-        a.href = urlMapping[number] || '#';
-        a.textContent = urlMapping[number] || 'URL not found';
-        li.appendChild(a);
-
-        let rank;
-        switch (searchType) {
-            case 'pageRank':
-                rank = pageRankMapping[number];
-                break;
-            case 'tfidf':
-                rank = tfidfMapping[number];
-                break;
-            case 'invertIndex':
-                rank = invertIndexMapping[number];
-                break;
-            default:
-                rank = 0;
         }
-        rank = ranks[number] || rank; // Update rank to aggregate rank if present
+    } else if (searchType === 'pagerank') {
+        for (let word of words) {
+            if (pageRankMap.has(word)) {
+                for (let [id, value] of pageRankMap.get(word)) {
+                    if (searchResults.has(id)) {
+                        searchResults.set(id, searchResults.get(id) + value);
+                    } else {
+                        searchResults.set(id, value);
+                    }
+                }
+            }
+        }
+    } else if (searchType === 'invertIndex') {
+        for (let word of words) {
+            if (invertIndexMap.has(word)) {
+                for (let [id, value] of invertIndexMap.get(word)) {
+                    if (searchResults.has(id)) {
+                        searchResults.set(id, searchResults.get(id) + value);
+                    } else {
+                        searchResults.set(id, value);
+                    }
+                }
+            }
+        }
+    }
 
-        console.log(`Number: ${number}, Rank: ${rank}`); // Debugging line
-        return { li, rank: rank || 0 };
-    });
+    // sort the search results by score
+    searchResults = new Map([...searchResults.entries()].sort((a, b) => b[1] - a[1]));
 
-    // Sort the list items in descending order based on rank
-    listItems.sort((a, b) => b.rank - a.rank).forEach(item => {
-        results.appendChild(item.li);
-    });
+    return searchResults;
+}
 
-    if (results.children.length === 0) {
-        const div = document.createElement('div');
-        div.textContent = 'No results found';
-        results.appendChild(div);
+// Function to display search results
+
+function displaySearchResults(searchResults) {
+    const searchResultsContainer = document.getElementById('search-results');
+
+    if(searchResultsContainer) {
+        searchResultsContainer.innerHTML = '';
+
+        if (searchResults.size === 0) {
+            const paragraph = document.createElement('p');
+            paragraph.textContent = 'No results found';
+            searchResultsContainer.appendChild(paragraph);
+        } else {
+            for (let [id, score] of searchResults) {
+                const div = document.createElement('div');
+                div.setAttribute('class', 'border border-gray-300 p-4 my-4');
+
+                const heading = document.createElement('h2');
+                heading.setAttribute('class', 'text-xl font-semibold');
+                heading.textContent = urlMap.get(id);
+                div.appendChild(heading);
+
+                const paragraph = document.createElement('p');
+                paragraph.textContent = `Score: ${score}`;
+                div.appendChild(paragraph);
+
+                searchResultsContainer.appendChild(div);
+            }
+        }
+    } else {
+        console.error("Element with id 'search-results' not found");
     }
 }
